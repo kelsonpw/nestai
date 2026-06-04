@@ -1,27 +1,71 @@
-# GitHub Pages deploy workflow (PLACEHOLDER / STUB)
-#
-# TODO: The integration agent finalizes the GitHub Pages deployment here.
-# This file is intentionally left as a commented-out stub so it does not run.
-# It should build apps/web and publish the static output to GitHub Pages.
-#
-# name: Deploy Pages
-#
-# on:
-#   push:
-#     branches: [main]
-#   workflow_dispatch:
-#
-# permissions:
-#   contents: read
-#   pages: write
-#   id-token: write
-#
-# jobs:
-#   deploy:
-#     runs-on: ubuntu-latest
-#     environment:
-#       name: github-pages
-#       url: ${{ steps.deployment.outputs.page_url }}
-#     steps:
-#       - uses: actions/checkout@v4
-#       # TODO: setup pnpm/node, build apps/web, upload-pages-artifact, deploy-pages
+name: Deploy Pages
+
+# Builds the apps/web dashboard and publishes the static output to GitHub Pages
+# (the approved static host for the dashboard). The API container is deployed
+# separately to a cloud container host — see infra/README.md.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Least-privilege token for the Pages deployment.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow one concurrent deployment; let an in-progress run finish.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile=false
+
+      - name: Build workspace libraries
+        # apps/web depends on @nestai/contracts types being built.
+        run: pnpm -r --filter "@nestai/contracts" build
+
+      - name: Build dashboard (project-page base path)
+        env:
+          # Repo-name base path so assets resolve under /<repo>/ on Pages.
+          VITE_BASE: /nestai/
+        run: pnpm --filter @nestai/web build
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: apps/web/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

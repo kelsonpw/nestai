@@ -1,0 +1,64 @@
+# GCP Cloud Run service skeleton for the NestAI API.
+#
+# Deploy with:
+#   gcloud run services replace infra/gcp-cloud-run-service.yaml --region=REGION
+#
+# The image is built from infra/Dockerfile and pushed to Artifact Registry.
+# DATABASE_URL / REDIS_URL / ANTHROPIC_API_KEY are sourced from Secret Manager
+# (referenced below); replace PROJECT_ID / REGION before deploying.
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: nestai-api
+  labels:
+    app: nestai-api
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: "0"
+        autoscaling.knative.dev/maxScale: "4"
+    spec:
+      containerConcurrency: 80
+      timeoutSeconds: 300
+      containers:
+        - image: REGION-docker.pkg.dev/PROJECT_ID/nestai/nestai-api:latest
+          ports:
+            - containerPort: 3000
+          env:
+            - name: NODE_ENV
+              value: production
+            - name: PROVIDER_MODE
+              value: real
+            - name: PORT
+              value: "3000"
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: nestai-database-url
+                  key: latest
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: nestai-redis-url
+                  key: latest
+            - name: ANTHROPIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: nestai-anthropic-api-key
+                  key: latest
+          resources:
+            limits:
+              cpu: "1"
+              memory: 512Mi
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            failureThreshold: 10
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            periodSeconds: 30

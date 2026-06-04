@@ -1,0 +1,68 @@
+# Azure Container Apps skeleton for the NestAI API.
+#
+# Deploy with:
+#   az containerapp create --resource-group RG --name nestai-api \
+#     --environment nestai-env --yaml infra/azure-container-app.yaml
+#
+# The image is built from infra/Dockerfile and pushed to Azure Container
+# Registry (ACR). Secrets below are wired from Key Vault / ACA secrets; replace
+# SUBSCRIPTION_ID / RG / ACR_NAME before deploying.
+type: Microsoft.App/containerApps
+name: nestai-api
+location: eastus
+properties:
+  managedEnvironmentId: /subscriptions/SUBSCRIPTION_ID/resourceGroups/RG/providers/Microsoft.App/managedEnvironments/nestai-env
+  configuration:
+    activeRevisionsMode: Single
+    ingress:
+      external: true
+      targetPort: 3000
+      transport: auto
+    secrets:
+      - name: database-url
+        keyVaultUrl: https://nestai-kv.vault.azure.net/secrets/DATABASE-URL
+        identity: system
+      - name: redis-url
+        keyVaultUrl: https://nestai-kv.vault.azure.net/secrets/REDIS-URL
+        identity: system
+      - name: anthropic-api-key
+        keyVaultUrl: https://nestai-kv.vault.azure.net/secrets/ANTHROPIC-API-KEY
+        identity: system
+    registries:
+      - server: ACR_NAME.azurecr.io
+        identity: system
+  template:
+    containers:
+      - name: nestai-api
+        image: ACR_NAME.azurecr.io/nestai-api:latest
+        resources:
+          cpu: 0.5
+          memory: 1.0Gi
+        env:
+          - name: NODE_ENV
+            value: production
+          - name: PROVIDER_MODE
+            value: real
+          - name: PORT
+            value: "3000"
+          - name: DATABASE_URL
+            secretRef: database-url
+          - name: REDIS_URL
+            secretRef: redis-url
+          - name: ANTHROPIC_API_KEY
+            secretRef: anthropic-api-key
+        probes:
+          - type: Liveness
+            httpGet:
+              path: /health
+              port: 3000
+            periodSeconds: 30
+          - type: Startup
+            httpGet:
+              path: /health
+              port: 3000
+            periodSeconds: 5
+            failureThreshold: 10
+    scale:
+      minReplicas: 0
+      maxReplicas: 4

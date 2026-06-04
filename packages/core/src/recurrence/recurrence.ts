@@ -9,8 +9,15 @@
  * Deterministic and time-injected: callers pass `from`/`now`; nothing reaches
  * for `Date.now()`.
  */
-import { RRule, rrulestr } from 'rrule';
+// `rrule` is published as CommonJS, so under Node's native ESM loader its named
+// exports are not statically analyzable. Import the default (the CJS module
+// namespace) and destructure the values — this works both bundled (vitest) and
+// as plain Node ESM (the demo / a real service). Keep `RRule` usable as a type.
+import rrulePkg from 'rrule';
 import type { TaskDraft, TaskCategory } from '@nestai/contracts';
+
+const { RRule, rrulestr } = rrulePkg as typeof import('rrule');
+type RRule = InstanceType<typeof RRule>;
 import { toDate, addDays, type Clock } from '../time.js';
 
 export interface ExpandOptions {

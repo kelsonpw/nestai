@@ -1,0 +1,12 @@
+# Build artifacts and local state — keep the image build context lean.
+**/node_modules
+**/dist
+**/.turbo
+**/*.tsbuildinfo
+.git
+.github
+coverage
+fixtures/_sink
+**/.env
+**/*.local
+apps/web/dist

@@ -11,11 +11,11 @@ jobs:
     env:
       PROVIDER_MODE: mock
       DATABASE_URL: postgresql://nestai:nestai@localhost:5432/nestai
-      REDIS_URL: redis://localhost:6379
       PORT: '3000'
 
     services:
       postgres:
+        # pgvector-enabled Postgres 16 (GitHub runners can pull images).
         image: pgvector/pgvector:pg16
         env:
           POSTGRES_USER: nestai
@@ -25,16 +25,6 @@ jobs:
           - 5432:5432
         options: >-
           --health-cmd "pg_isready -U nestai -d nestai"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-
-      redis:
-        image: redis:7-alpine
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd "redis-cli ping"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
@@ -57,12 +47,21 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile=false
 
-      - name: Build
+      - name: Build (all packages)
         run: pnpm -r build
 
       - name: Lint
         run: pnpm -r lint
         continue-on-error: true
 
-      - name: Test
+      - name: Apply migrations (prisma migrate deploy)
+        run: pnpm db:migrate
+
+      - name: Seed database (The Rivera Family)
+        run: pnpm db:seed
+
+      - name: Test (all packages)
         run: pnpm -r test
+
+      - name: Acceptance demo (end-to-end)
+        run: pnpm demo

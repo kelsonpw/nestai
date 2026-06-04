@@ -13,5 +13,22 @@
       { "type": "heading", "text": "Calendar - Week of June 8" },
       { "type": "line", "text": "Wed BUSY all day - offsite" }
     ]
+  },
+  "book-fair-flyer.png": {
+    "text": "LINCOLN ELEMENTARY SCHOOL\nScholastic Book Fair!\nEvent: Book Fair in the Library\nDate: Friday, June 19, 2026\nTime: 9:00 AM - 3:00 PM\nThis year we also have a class field trip. Please sign and return the attached permission slip.\nBook Fair entry fee: $5 per family supports the library.\nPermission slip due Wednesday 3pm.\nWe cannot wait to see you there!",
+    "blocks": [
+      { "type": "heading", "text": "LINCOLN ELEMENTARY SCHOOL" },
+      { "type": "heading", "text": "Scholastic Book Fair!" },
+      { "type": "line", "text": "Book Fair in the Library" },
+      { "type": "line", "text": "Permission slip due Wednesday 3pm." },
+      { "type": "line", "text": "Book Fair entry fee: $5 per family supports the library." }
+    ]
+  },
+  "work-tue-thu.png": {
+    "text": "Outlook Calendar - This Week\nIn the office Tue-Thu\n2026-06-09T16:00:00Z to 2026-06-09T23:00:00Z In office (Tuesday)\n2026-06-10T16:00:00Z to 2026-06-10T23:00:00Z In office (Wednesday)\n2026-06-11T16:00:00Z to 2026-06-11T23:00:00Z In office (Thursday)\nFri remote",
+    "blocks": [
+      { "type": "heading", "text": "Outlook Calendar - This Week" },
+      { "type": "line", "text": "In the office Tue-Thu" }
+    ]
   }
 }

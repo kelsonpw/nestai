@@ -1,0 +1,53 @@
+{
+  "//": "AWS ECS / Fargate task definition skeleton for the NestAI API.",
+  "//usage": "Register with: aws ecs register-task-definition --cli-input-json file://infra/aws-ecs-task-definition.json. Replace ACCOUNT_ID/REGION and wire secrets via AWS Secrets Manager. The image is built from infra/Dockerfile and pushed to ECR.",
+  "family": "nestai-api",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::ACCOUNT_ID:role/nestai-ecs-execution-role",
+  "taskRoleArn": "arn:aws:iam::ACCOUNT_ID:role/nestai-task-role",
+  "containerDefinitions": [
+    {
+      "name": "nestai-api",
+      "image": "ACCOUNT_ID.dkr.ecr.REGION.amazonaws.com/nestai-api:latest",
+      "essential": true,
+      "portMappings": [{ "containerPort": 3000, "protocol": "tcp" }],
+      "environment": [
+        { "name": "NODE_ENV", "value": "production" },
+        { "name": "PROVIDER_MODE", "value": "real" },
+        { "name": "PORT", "value": "3000" }
+      ],
+      "secrets": [
+        {
+          "name": "DATABASE_URL",
+          "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:nestai/DATABASE_URL"
+        },
+        {
+          "name": "REDIS_URL",
+          "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:nestai/REDIS_URL"
+        },
+        {
+          "name": "ANTHROPIC_API_KEY",
+          "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:nestai/ANTHROPIC_API_KEY"
+        }
+      ],
+      "healthCheck": {
+        "command": ["CMD-SHELL", "node -e \"fetch('http://localhost:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 30
+      },
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/nestai-api",
+          "awslogs-region": "REGION",
+          "awslogs-stream-prefix": "nestai"
+        }
+      }
+    }
+  ]
+}
