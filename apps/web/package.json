@@ -4,10 +4,33 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "echo \"@nestai/web build stub - frontend agent will replace with Vite\" && exit 0",
-    "test": "echo \"no tests yet (@nestai/web)\" && exit 0",
-    "lint": "echo \"@nestai/web lint stub\" && exit 0",
-    "typecheck": "echo \"@nestai/web typecheck stub\" && exit 0",
-    "dev": "echo \"@nestai/web dev stub - frontend agent will replace with Vite\" && exit 0"
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --ext .ts,.tsx"
+  },
+  "dependencies": {
+    "@nestai/contracts": "workspace:*",
+    "@tanstack/react-query": "^5.59.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.27.0"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.0.1",
+    "@testing-library/user-event": "^14.5.2",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.3",
+    "autoprefixer": "^10.4.20",
+    "jsdom": "^25.0.1",
+    "postcss": "^8.4.47",
+    "tailwindcss": "^3.4.14",
+    "typescript": "^5.5.4",
+    "vite": "^5.4.10",
+    "vitest": "^2.1.4"
   }
 }
