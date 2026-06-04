@@ -1,0 +1,24 @@
+{
+  "name": "@nestai/adapters",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -b",
+    "test": "echo \"no tests yet (@nestai/adapters)\" && exit 0",
+    "lint": "eslint src --ext .ts",
+    "typecheck": "tsc -b --noEmit false"
+  },
+  "dependencies": {
+    "@nestai/contracts": "workspace:*"
+  }
+}

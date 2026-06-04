@@ -1,0 +1,29 @@
+{
+  "name": "nestai",
+  "version": "0.0.0",
+  "private": true,
+  "description": "NestAI - household orchestrator monorepo",
+  "type": "module",
+  "packageManager": "pnpm@9.0.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "db:migrate": "pnpm --filter @nestai/db run migrate",
+    "db:seed": "pnpm --filter @nestai/db run seed",
+    "demo": "pnpm --filter @nestai/api run demo",
+    "ci": "pnpm install --frozen-lockfile=false && turbo run build test"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^7.18.0",
+    "@typescript-eslint/parser": "^7.18.0",
+    "eslint": "^8.57.0",
+    "prettier": "^3.3.3",
+    "turbo": "^2.0.0",
+    "typescript": "^5.5.4"
+  }
+}

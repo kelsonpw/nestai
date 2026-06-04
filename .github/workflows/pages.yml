@@ -1,0 +1,27 @@
+# GitHub Pages deploy workflow (PLACEHOLDER / STUB)
+#
+# TODO: The integration agent finalizes the GitHub Pages deployment here.
+# This file is intentionally left as a commented-out stub so it does not run.
+# It should build apps/web and publish the static output to GitHub Pages.
+#
+# name: Deploy Pages
+#
+# on:
+#   push:
+#     branches: [main]
+#   workflow_dispatch:
+#
+# permissions:
+#   contents: read
+#   pages: write
+#   id-token: write
+#
+# jobs:
+#   deploy:
+#     runs-on: ubuntu-latest
+#     environment:
+#       name: github-pages
+#       url: ${{ steps.deployment.outputs.page_url }}
+#     steps:
+#       - uses: actions/checkout@v4
+#       # TODO: setup pnpm/node, build apps/web, upload-pages-artifact, deploy-pages

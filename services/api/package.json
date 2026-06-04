@@ -1,0 +1,24 @@
+{
+  "name": "@nestai/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/main.js",
+  "scripts": {
+    "build": "tsc -b",
+    "test": "echo \"no tests yet (@nestai/api)\" && exit 0",
+    "lint": "eslint src --ext .ts",
+    "typecheck": "tsc -b --noEmit false",
+    "start": "node dist/main.js",
+    "demo": "node dist/main.js"
+  },
+  "dependencies": {
+    "@nestai/adapters": "workspace:*",
+    "@nestai/contracts": "workspace:*",
+    "@nestai/core": "workspace:*",
+    "@nestai/db": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0"
+  }
+}

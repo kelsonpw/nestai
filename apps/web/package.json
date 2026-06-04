@@ -1,0 +1,13 @@
+{
+  "name": "@nestai/web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "echo \"@nestai/web build stub - frontend agent will replace with Vite\" && exit 0",
+    "test": "echo \"no tests yet (@nestai/web)\" && exit 0",
+    "lint": "echo \"@nestai/web lint stub\" && exit 0",
+    "typecheck": "echo \"@nestai/web typecheck stub\" && exit 0",
+    "dev": "echo \"@nestai/web dev stub - frontend agent will replace with Vite\" && exit 0"
+  }
+}
