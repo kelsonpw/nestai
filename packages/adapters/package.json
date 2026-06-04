@@ -27,6 +27,6 @@
   },
   "devDependencies": {
     "@types/nodemailer": "^7.0.4",
-    "vitest": "^4.0.0"
+    "vitest": "^2.1.9"
   }
 }
