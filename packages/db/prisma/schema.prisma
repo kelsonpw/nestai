@@ -1,0 +1,686 @@
+// NestAI data layer — Prisma schema.
+//
+// Mirrors @nestai/contracts (packages/contracts/src/{enums,entities}.ts)
+// faithfully: same entity fields, same enum values. Computed types
+// (BalanceBattery / LoadEquity) are intentionally NOT persisted.
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [vector]
+}
+
+// --------------------------------------------------------------------------
+// Enums (mirror packages/contracts/src/enums.ts)
+// --------------------------------------------------------------------------
+
+enum Role {
+  HEAD
+  DEPENDENT
+  THIRD_PARTY
+}
+
+enum AvailabilityState {
+  AVAILABLE
+  BUSY
+  TRAVEL
+}
+
+enum TaskUrgency {
+  LOW
+  MED
+  HIGH
+  CRITICAL
+}
+
+enum TaskStatus {
+  OPEN
+  ASSIGNED
+  CLAIMED
+  DROPPED
+  DONE
+  BLOCKED
+}
+
+enum TaskCategory {
+  MAINTENANCE
+  SCHOOL
+  ERRAND
+  ADMIN
+  EVENT
+  SEASONAL
+  WELLNESS
+  LOGISTICS
+}
+
+enum IngestionKind {
+  CALENDAR
+  WHATSAPP
+  EMAIL
+  UPLOAD
+  SCREENSHOT
+}
+
+enum ApprovalReason {
+  PERMISSION_SLIP
+  FEE
+  QUOTE
+  ASSIGNMENT
+  OTHER
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum NotificationChannel {
+  EMAIL
+  SMS
+  WHATSAPP
+}
+
+enum NotificationType {
+  DAILY_DIGEST
+  JIT_REMINDER
+  APPROVAL_REQUEST
+  ESCALATION_BROADCAST
+  CRITICAL_OVERRIDE
+  SUNDAY_CHECKIN
+  MILESTONE
+  WELLNESS_SUGGESTION
+  CLAIM_WINDOW
+}
+
+enum SeasonalKind {
+  CAMP
+  SPORTS
+  CAMPSITE
+  SKI_TRIP
+  TRIP
+}
+
+enum SeasonalStatus {
+  SEARCHING
+  TRACKING
+  CONFIRMED
+}
+
+enum MilestoneStage {
+  PREP_30D
+  ASSET_CHECK_14D
+  FINAL_48H
+  JIT_15M
+}
+
+enum AssetKind {
+  VEHICLE
+  GEAR
+}
+
+enum AvailabilitySource {
+  NL_TEXT
+  SUNDAY_CHECKIN
+  SCREENSHOT_OCR
+}
+
+enum ConflictType {
+  SOLE_DRIVER
+  RIPPLE_SHIFT
+  BUFFER_SQUEEZE
+}
+
+enum ConflictSeverity {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum WellnessKind {
+  GYM
+  QUIET
+  DATE_NIGHT
+  CUSTOM
+}
+
+enum WellnessPeriod {
+  WEEKLY
+  BIWEEKLY
+}
+
+enum WellnessWindowStatus {
+  SUGGESTED
+  CLAIMED
+  SLID
+  MISSED
+}
+
+enum PiiTokenType {
+  ADDRESS
+  SSN
+  PHONE
+  EMAIL
+  FINANCIAL
+  CORP_LOGO
+  NAME
+}
+
+enum ProcessingStatus {
+  PENDING
+  PROCESSING
+  PROCESSED
+  FAILED
+}
+
+enum NotificationStatus {
+  SCHEDULED
+  SENT
+  FAILED
+  CANCELLED
+}
+
+enum IngestionSourceStatus {
+  ACTIVE
+  PAUSED
+  ERROR
+  DISCONNECTED
+}
+
+// --------------------------------------------------------------------------
+// Core household entities
+// --------------------------------------------------------------------------
+
+model Household {
+  id                     String   @id @default(cuid())
+  name                   String
+  timezone               String
+  digestTimeLocal        String
+  sundayCheckinTimeLocal String
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  members              Member[]
+  ingestionSources     IngestionSource[]
+  rawMessages          RawMessage[]
+  events               Event[]
+  tasks                Task[]
+  approvals            Approval[]
+  notifications        Notification[]
+  routingRules         RoutingRule[]
+  familyContexts       FamilyContext[]
+  seasonalProjects     SeasonalProject[]
+  registrationTimelines RegistrationTimeline[]
+  milestones           Milestone[]
+  assets               HouseholdAsset[]
+  taskDependencies     TaskDependency[]
+  escalationEvents     EscalationEvent[]
+  availabilityBlocks   AvailabilityBlock[]
+  conflicts            Conflict[]
+  wellnessGoals        WellnessGoal[]
+  wellnessWindows      WellnessWindow[]
+}
+
+model Member {
+  id                String            @id @default(cuid())
+  householdId       String
+  displayName       String
+  role              Role
+  birthDate         String? // "YYYY-MM-DD"
+  skills            String[]          @default([])
+  drivingPrivileges Boolean           @default(false)
+  homeLocation      Json?
+  officeLocation    Json?
+  commuteMinutes    Int?
+  availabilityState AvailabilityState @default(AVAILABLE)
+  contactEmail      String?
+  contactPhone      String?
+  messagingHandle   String?
+  active            Boolean           @default(true)
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  household           Household           @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  assignedTasks       Task[]              @relation("TaskAssignedMember")
+  ownedEvents         Event[]             @relation("EventOwner")
+  requestedApprovals  Approval[]          @relation("ApprovalRequestedBy")
+  decidedApprovals    Approval[]          @relation("ApprovalDecidedBy")
+  routingTargets      RoutingRule[]       @relation("RoutingAssignTo")
+  notifications       Notification[]
+  availabilityBlocks  AvailabilityBlock[]
+  wellnessGoals       WellnessGoal[]
+  wellnessWindows     WellnessWindow[]
+
+  @@index([householdId])
+}
+
+// --------------------------------------------------------------------------
+// Ingestion
+// --------------------------------------------------------------------------
+
+model IngestionSource {
+  id           String                @id @default(cuid())
+  householdId  String
+  kind         IngestionKind
+  provider     String
+  externalRef  String?
+  config       Json                  @default("{}")
+  lastSyncedAt DateTime?
+  status       IngestionSourceStatus @default(ACTIVE)
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
+
+  household   Household    @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  rawMessages RawMessage[]
+  events      Event[]
+
+  @@index([householdId])
+}
+
+model RawMessage {
+  id           String           @id @default(cuid())
+  householdId  String
+  sourceId     String?
+  rawText      String
+  scrubbedText String?
+  // tokenMap: array of PiiToken ({ token, type, original }) stored as JSON.
+  tokenMap     Json?
+  mediaUrl     String?
+  mediaType    String?
+  receivedAt   DateTime
+  processedAt  DateTime?
+  purgeAfter   DateTime?
+  status       ProcessingStatus @default(PENDING)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  household Household        @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  source    IngestionSource? @relation(fields: [sourceId], references: [id], onDelete: SetNull)
+
+  @@index([householdId])
+  @@index([sourceId])
+}
+
+// --------------------------------------------------------------------------
+// Calendar / events
+// --------------------------------------------------------------------------
+
+model Event {
+  id            String    @id @default(cuid())
+  householdId   String
+  title         String
+  startsAt      DateTime
+  endsAt        DateTime?
+  location      Json?
+  allDay        Boolean   @default(false)
+  sourceId      String?
+  ownerMemberId String?
+  colorTag      String?
+  externalId    String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  household   Household        @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  source      IngestionSource? @relation(fields: [sourceId], references: [id], onDelete: SetNull)
+  ownerMember Member?          @relation("EventOwner", fields: [ownerMemberId], references: [id], onDelete: SetNull)
+
+  @@index([householdId])
+  @@index([sourceId])
+  @@index([ownerMemberId])
+}
+
+// --------------------------------------------------------------------------
+// Tasks
+// --------------------------------------------------------------------------
+
+model Task {
+  id               String       @id @default(cuid())
+  householdId      String
+  title            String
+  description      String?
+  dueAt            DateTime?
+  urgency          TaskUrgency  @default(MED)
+  status           TaskStatus   @default(OPEN)
+  category         TaskCategory
+  assignedMemberId String?
+  requiredSkills   String[]     @default([])
+  minAge           Int?
+  maxAge           Int?
+  recurrenceRule   String?
+  parentTaskId     String?
+  sourceMessageId  String?
+  requiresApproval Boolean      @default(false)
+  confidence       Float        @default(1)
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  household      Household        @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  assignedMember Member?          @relation("TaskAssignedMember", fields: [assignedMemberId], references: [id], onDelete: SetNull)
+  parentTask     Task?            @relation("TaskParent", fields: [parentTaskId], references: [id], onDelete: SetNull)
+  childTasks     Task[]           @relation("TaskParent")
+  approvals      Approval[]
+  dependencies   TaskDependency[] @relation("TaskDependencies")
+  dependents     TaskDependency[] @relation("TaskDependsOnChild")
+  escalations    EscalationEvent[]
+  conflicts      Conflict[]
+
+  @@index([householdId])
+  @@index([assignedMemberId])
+  @@index([parentTaskId])
+}
+
+// --------------------------------------------------------------------------
+// Approvals
+// --------------------------------------------------------------------------
+
+model Approval {
+  id            String         @id @default(cuid())
+  householdId   String
+  taskId        String
+  requestedById String
+  status        ApprovalStatus @default(PENDING)
+  decidedById   String?
+  decidedAt     DateTime?
+  reason        ApprovalReason
+  amount        Float?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  household   Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  task        Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  requestedBy Member    @relation("ApprovalRequestedBy", fields: [requestedById], references: [id], onDelete: Cascade)
+  decidedBy   Member?   @relation("ApprovalDecidedBy", fields: [decidedById], references: [id], onDelete: SetNull)
+
+  @@index([householdId])
+  @@index([taskId])
+}
+
+// --------------------------------------------------------------------------
+// Notifications
+// --------------------------------------------------------------------------
+
+model Notification {
+  id           String              @id @default(cuid())
+  householdId  String
+  memberId     String
+  channel      NotificationChannel
+  type         NotificationType
+  payload      Json                @default("{}")
+  scheduledFor DateTime
+  sentAt       DateTime?
+  status       NotificationStatus  @default(SCHEDULED)
+  providerRef  String?
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  member    Member    @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@index([householdId])
+  @@index([memberId])
+}
+
+// --------------------------------------------------------------------------
+// Routing
+// --------------------------------------------------------------------------
+
+model RoutingRule {
+  id               String        @id @default(cuid())
+  householdId      String
+  name             String
+  matchCategory    TaskCategory?
+  matchSkills      String[]      @default([])
+  minAge           Int?
+  maxAge           Int?
+  assignToMemberId String?
+  priority         Int           @default(0)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  household      Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  assignToMember Member?   @relation("RoutingAssignTo", fields: [assignToMemberId], references: [id], onDelete: SetNull)
+
+  @@index([householdId])
+}
+
+// --------------------------------------------------------------------------
+// Family context (retrieval memory)
+// --------------------------------------------------------------------------
+
+model FamilyContext {
+  id          String   @id @default(cuid())
+  householdId String
+  kind        String
+  text        String
+  refId       String?
+  // pgvector embedding (1536 dims). Optional so seed/CI without embeddings works.
+  embedding   Unsupported("vector(1536)")?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+
+  @@index([householdId])
+}
+
+// --------------------------------------------------------------------------
+// Seasonal projects & milestones
+// --------------------------------------------------------------------------
+
+model SeasonalProject {
+  id              String         @id @default(cuid())
+  householdId     String
+  kind            SeasonalKind
+  status          SeasonalStatus @default(SEARCHING)
+  title           String
+  // targetWindow: { start, end } TimeWindow stored as JSON.
+  targetWindow    Json?
+  sourceMessageId String?
+  location        Json?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  household  Household   @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  milestones Milestone[]
+
+  @@index([householdId])
+}
+
+model RegistrationTimeline {
+  id          String       @id @default(cuid())
+  householdId String
+  kind        SeasonalKind
+  region      String?
+  label       String
+  opensRule   String
+  leadDays    Int
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+
+  @@index([householdId])
+}
+
+model Milestone {
+  id                String         @id @default(cuid())
+  householdId       String
+  seasonalProjectId String
+  stage             MilestoneStage
+  fireAt            DateTime
+  content           String
+  fired             Boolean        @default(false)
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  household       Household       @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  seasonalProject SeasonalProject @relation(fields: [seasonalProjectId], references: [id], onDelete: Cascade)
+
+  @@index([householdId])
+  @@index([seasonalProjectId])
+}
+
+model HouseholdAsset {
+  id            String    @id @default(cuid())
+  householdId   String
+  kind          AssetKind
+  name          String
+  attrs         Json      @default("{}")
+  lastCheckedAt DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  household    Household        @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  dependencies TaskDependency[] @relation("TaskDependsOnAsset")
+
+  @@index([householdId])
+}
+
+model TaskDependency {
+  id               String   @id @default(cuid())
+  householdId      String
+  taskId           String
+  dependsOnAssetId String?
+  dependsOnChildId String?
+  reason           String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  household       Household       @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  task            Task            @relation("TaskDependencies", fields: [taskId], references: [id], onDelete: Cascade)
+  dependsOnAsset  HouseholdAsset? @relation("TaskDependsOnAsset", fields: [dependsOnAssetId], references: [id], onDelete: SetNull)
+  dependsOnChild  Task?           @relation("TaskDependsOnChild", fields: [dependsOnChildId], references: [id], onDelete: SetNull)
+
+  @@index([householdId])
+  @@index([taskId])
+}
+
+// --------------------------------------------------------------------------
+// Escalation
+// --------------------------------------------------------------------------
+
+model EscalationEvent {
+  id          String    @id @default(cuid())
+  householdId String
+  taskId      String
+  tier        Int
+  broadcastAt DateTime?
+  claimedById String?
+  resolvedAt  DateTime?
+  deadline    DateTime
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  household   Household    @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  task        Task         @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  claimTokens ClaimToken[]
+
+  @@index([householdId])
+  @@index([taskId])
+}
+
+model ClaimToken {
+  token             String    @id
+  taskId            String
+  escalationEventId String?
+  memberId          String?
+  expiresAt         DateTime
+  redeemedAt        DateTime?
+
+  escalationEvent EscalationEvent? @relation(fields: [escalationEventId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@index([escalationEventId])
+}
+
+// --------------------------------------------------------------------------
+// Work / commute availability & conflicts
+// --------------------------------------------------------------------------
+
+model AvailabilityBlock {
+  id            String             @id @default(cuid())
+  householdId   String
+  memberId      String
+  kind          AvailabilityState
+  startsAt      DateTime
+  endsAt        DateTime
+  source        AvailabilitySource
+  purgeRawAfter DateTime?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  member    Member    @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@index([householdId])
+  @@index([memberId])
+}
+
+model Conflict {
+  id            String           @id @default(cuid())
+  householdId   String
+  type          ConflictType
+  severity      ConflictSeverity
+  description   String
+  mitigation    String
+  windowStart   DateTime?
+  windowEnd     DateTime?
+  relatedTaskId String?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  household   Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  relatedTask Task?     @relation(fields: [relatedTaskId], references: [id], onDelete: SetNull)
+
+  @@index([householdId])
+  @@index([relatedTaskId])
+}
+
+// --------------------------------------------------------------------------
+// Well-being
+// --------------------------------------------------------------------------
+
+model WellnessGoal {
+  id          String         @id @default(cuid())
+  householdId String
+  memberId    String
+  kind        WellnessKind
+  targetCount Int
+  durationMin Int
+  period      WellnessPeriod
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  household Household        @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  member    Member           @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  windows   WellnessWindow[]
+
+  @@index([householdId])
+  @@index([memberId])
+}
+
+model WellnessWindow {
+  id          String               @id @default(cuid())
+  householdId String
+  memberId    String
+  goalId      String?
+  startsAt    DateTime
+  endsAt      DateTime
+  status      WellnessWindowStatus @default(SUGGESTED)
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+
+  household Household     @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  member    Member        @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  goal      WellnessGoal? @relation(fields: [goalId], references: [id], onDelete: SetNull)
+
+  @@index([householdId])
+  @@index([memberId])
+  @@index([goalId])
+}

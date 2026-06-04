@@ -12,15 +12,27 @@
     }
   },
   "files": ["dist"],
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
   "scripts": {
+    "prebuild": "prisma generate",
     "build": "tsc -b",
     "test": "echo \"no tests yet (@nestai/db)\" && exit 0",
     "lint": "eslint src --ext .ts",
     "typecheck": "tsc -b --noEmit false",
-    "migrate": "echo \"db:migrate stub (@nestai/db) - implemented by DB agent\" && exit 0",
-    "seed": "echo \"db:seed stub (@nestai/db) - implemented by DB agent\" && exit 0"
+    "prisma:generate": "prisma generate",
+    "migrate": "prisma migrate deploy",
+    "migrate:dev": "prisma migrate dev",
+    "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
-    "@nestai/contracts": "workspace:*"
+    "@nestai/contracts": "workspace:*",
+    "@prisma/client": "^5.22.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "prisma": "^5.22.0",
+    "tsx": "^4.19.2"
   }
 }
