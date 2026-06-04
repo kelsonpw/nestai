@@ -1,0 +1,17 @@
+{
+  "school-flyer.png": {
+    "text": "LINCOLN ELEMENTARY\nField Trip to the Science Museum\nDate: Friday, June 12\nDeparture: 9:00 AM from the front entrance\nReturn: 2:30 PM\nCost: $12 per student\nPermission slip due Friday 3pm.\nPack a sack lunch. No nut products please.",
+    "blocks": [
+      { "type": "heading", "text": "LINCOLN ELEMENTARY" },
+      { "type": "line", "text": "Field Trip to the Science Museum" },
+      { "type": "line", "text": "Permission slip due Friday 3pm." }
+    ]
+  },
+  "work-screenshot.png": {
+    "text": "Calendar - Week of June 8\nMon 9:00 Standup\nMon 13:00 1:1 with Priya\nTue 10:00 Design review\nWed BUSY all day - offsite\nThu 15:00 Sprint demo\nFri 12:00 Lunch with client",
+    "blocks": [
+      { "type": "heading", "text": "Calendar - Week of June 8" },
+      { "type": "line", "text": "Wed BUSY all day - offsite" }
+    ]
+  }
+}

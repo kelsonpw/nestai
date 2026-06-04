@@ -1,0 +1,25 @@
+[
+  {
+    "id": "email-school-flyer-001",
+    "from": "office@lincoln-elementary.test",
+    "to": ["parents@household.test"],
+    "subject": "Field Trip Permission Slip Due Friday",
+    "body": "Dear families,\n\nOur class field trip to the Science Museum is coming up. Please sign and return the attached permission slip by Friday 3pm. The trip fee is $12 per student.\n\nThank you,\nLincoln Elementary Office",
+    "receivedAt": "2026-06-02T15:04:00.000Z",
+    "attachments": [
+      {
+        "filename": "school-flyer.png",
+        "url": "fixtures/ocr/school-flyer.png",
+        "mimeType": "image/png"
+      }
+    ]
+  },
+  {
+    "id": "email-soccer-002",
+    "from": "coach@riverside-soccer.test",
+    "to": ["parents@household.test"],
+    "subject": "Practice moved to 4pm tomorrow",
+    "body": "Hi all,\n\nReminder: practice is moved to tomorrow at 4pm at Field 3. Please bring water. We should carpool to the away game next weekend.\n\nCoach Dana",
+    "receivedAt": "2026-06-03T18:20:00.000Z"
+  }
+]
